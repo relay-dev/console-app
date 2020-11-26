@@ -61,10 +61,6 @@ namespace ConsoleApp
             {
                 // Run the program
                 await application.RunAsync(cancellationToken);
-
-                Console.Clear();
-                Console.WriteLine("The program has ended");
-                Console.ReadLine();
             }
             catch (Exception e)
             {

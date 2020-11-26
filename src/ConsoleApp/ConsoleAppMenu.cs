@@ -6,7 +6,7 @@ using System.Reflection;
 
 namespace ConsoleApp
 {
-    public abstract class ConsoleAppMenuRunner : IConsoleAppMenuRunner
+    public abstract class ConsoleAppMenu : IConsoleAppMenuRunner
     {
         public void Run()
         {
@@ -41,7 +41,10 @@ namespace ConsoleApp
                     {
                         Console.Clear();
 
-                        consoleAppMenuOption.ValueFactory.Invoke();
+                        Execute(() =>
+                        {
+                            consoleAppMenuOption.ValueFactory.Invoke();
+                        });
 
                         Console.WriteLine("{0}Press any key to continue...", Environment.NewLine);
                     }
@@ -49,6 +52,26 @@ namespace ConsoleApp
                     Console.ReadKey();
                     Console.Clear();
                 }
+            }
+        }
+
+        private static void Execute(Action action)
+        {
+            try
+            {
+                action.Invoke();
+
+                Console.WriteLine();
+                Console.WriteLine("***Complete***");
+                Console.WriteLine("Press any key to continue");
+                Console.ReadKey();
+            }
+            catch (Exception e)
+            {
+                Console.Clear();
+                Console.WriteLine($"ERROR: {e.Message}");
+                Console.WriteLine("Press any key to continue");
+                Console.ReadKey();
             }
         }
 
@@ -83,7 +106,7 @@ namespace ConsoleApp
                 Console.WriteLine(" ({0}) {1}", consoleAppMenuOption.Key, consoleAppMenuOption.Name);
             }
 
-            Console.WriteLine("{0}Enter {1}{2} (enter ( h ) to return to the home menu)", Environment.NewLine, consoleAppMenuOptions.Min(s => s.Key), consoleAppMenuOptions.Count == 1 ? string.Empty : " - " + consoleAppMenuOptions.Max(sm => sm.Key));
+            Console.WriteLine("{0}Enter {1}{2} (enter 'h' to return to the home menu)", Environment.NewLine, consoleAppMenuOptions.Min(s => s.Key), consoleAppMenuOptions.Count == 1 ? string.Empty : " - " + consoleAppMenuOptions.Max(sm => sm.Key));
         }
     }
 }

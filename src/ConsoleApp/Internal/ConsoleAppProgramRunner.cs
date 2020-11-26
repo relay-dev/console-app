@@ -60,40 +60,14 @@ namespace ConsoleApp.Internal
                         }
                         else if (consoleAppMenuToRun.GetType().GetInterfaces().Contains(typeof(IConsoleAppMenuRunnerAsync)))
                         {
-                            Execute(async () =>
-                            {
-                                await ((IConsoleAppMenuRunnerAsync)consoleAppMenuToRun).RunAsync(cancellationToken);
-                            });
+                            await ((IConsoleAppMenuRunnerAsync)consoleAppMenuToRun).RunAsync(cancellationToken);
                         }
                         else
                         {
-                            Execute(() =>
-                            {
-                                ((IConsoleAppMenuRunner)consoleAppMenuToRun).Run();
-                            });
+                            ((IConsoleAppMenuRunner)consoleAppMenuToRun).Run();
                         }
                     }
                 }
-            }
-        }
-
-        private static void Execute(Action action)
-        {
-            try
-            {
-                action.Invoke();
-
-                Console.WriteLine();
-                Console.WriteLine("***Complete***");
-                Console.WriteLine("Press any key to continue");
-                Console.ReadKey();
-            }
-            catch (Exception e)
-            {
-                Console.Clear();
-                Console.WriteLine($"ERROR: {e.Message}");
-                Console.WriteLine("Press any key to continue");
-                Console.ReadKey();
             }
         }
 
@@ -128,7 +102,7 @@ namespace ConsoleApp.Internal
                 Console.WriteLine(" ({0}) {1}", consoleAppMenu.Key, consoleAppMenu.Name);
             }
 
-            Console.WriteLine("{0}Enter {1} - {2} (enter ( x ) to exit)", Environment.NewLine, consoleAppMenus.Min(s => s.Key), consoleAppMenus.Max(s => s.Key));
+            Console.WriteLine("{0}Enter {1}{2} (enter 'x' to exit)", Environment.NewLine, consoleAppMenus.Min(s => s.Key), consoleAppMenus.Count == 1 ? string.Empty : " - " + consoleAppMenus.Max(s => s.Key));
         }
     }
 }
