@@ -3,12 +3,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace ConsoleApp
 {
-    public abstract class ConsoleAppMenu : IConsoleAppMenuRunner
+    public abstract class ConsoleAppMenu : IConsoleAppMenu
     {
-        public void Run()
+        public async Task RunAsync(CancellationToken cancellationToken)
         {
             bool isExit = false;
 
@@ -41,9 +43,9 @@ namespace ConsoleApp
                     {
                         Console.Clear();
 
-                        Execute(() =>
+                        Execute(async () =>
                         {
-                            consoleAppMenuOption.ValueFactory.Invoke();
+                            await consoleAppMenuOption.ValueFactory.Invoke();
                         });
 
                         Console.WriteLine("{0}Press any key to continue...", Environment.NewLine);
@@ -91,7 +93,7 @@ namespace ConsoleApp
                 ConsoleAppMenuOptionAttribute consoleAppMenuOptionAttribute =
                     (ConsoleAppMenuOptionAttribute)m.GetCustomAttributes(typeof(ConsoleAppMenuOptionAttribute), true).Single();
 
-                consoleAppMenuOptions.Add(new ConsoleAppMenuOption(consoleAppMenuOptionAttribute.Key ?? (i + 1).ToString(), consoleAppMenuOptionAttribute.Name ?? m.Name + "()", async () => m.Invoke(this, null)));
+                consoleAppMenuOptions.Add(new ConsoleAppMenuOption(consoleAppMenuOptionAttribute.Key ?? (i + 1).ToString(), consoleAppMenuOptionAttribute.Name ?? m.Name + "()", async () => await (Task)m.Invoke(this, null)));
             }
 
             return consoleAppMenuOptions.OrderBy(sm => sm.Key).ToList();

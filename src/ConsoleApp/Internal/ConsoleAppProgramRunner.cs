@@ -52,19 +52,15 @@ namespace ConsoleApp.Internal
 
                         var consoleAppMenuToRun = _serviceProvider.GetRequiredService(consoleAppMenu.Type);
 
-                        if (!consoleAppMenuToRun.GetType().GetInterfaces().Contains(typeof(IConsoleAppMenuRunner)) && !consoleAppMenuToRun.GetType().GetInterfaces().Contains(typeof(IConsoleAppMenuRunnerAsync)))
+                        if (!consoleAppMenuToRun.GetType().GetInterfaces().Contains(typeof(IConsoleAppMenu)))
                         {
-                            Console.WriteLine("Error! That selection is not a ConsolaterApp (press any key to continue)");
+                            Console.WriteLine("Error! That selection is not a IConsoleAppMenu (press any key to continue)");
                             Console.ReadKey();
                             Console.Clear();
                         }
-                        else if (consoleAppMenuToRun.GetType().GetInterfaces().Contains(typeof(IConsoleAppMenuRunnerAsync)))
-                        {
-                            await ((IConsoleAppMenuRunnerAsync)consoleAppMenuToRun).RunAsync(cancellationToken);
-                        }
                         else
                         {
-                            ((IConsoleAppMenuRunner)consoleAppMenuToRun).Run();
+                            await ((IConsoleAppMenu)consoleAppMenuToRun).RunAsync(cancellationToken);
                         }
                     }
                 }

@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace ConsoleApp.Internal
 {
-    internal interface IConsoleAppMenuRunnerAsync
+    internal interface IConsoleAppMenu
     {
         Task RunAsync(CancellationToken cancellationToken);
     }
