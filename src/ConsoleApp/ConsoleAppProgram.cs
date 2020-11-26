@@ -1,114 +1,92 @@
 ﻿using ConsoleApp.Internal;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ConsoleApp
 {
-    public class ConsoleAppProgram
+    public class ConsoleAppProgram<TStartup> where TStartup : IConsoleAppStartup
     {
-        private readonly IServiceProvider _serviceProvider;
-
-        public ConsoleAppProgram(IServiceProvider serviceProvider)
+        protected static async Task RunAsync(CancellationToken cancellationToken = new CancellationToken())
         {
-            _serviceProvider = serviceProvider;
-        }
+            // Build configuration
+            var config = new ConfigurationBuilder()
+                .AddJsonFile("appsettings.json", true)
+                .AddJsonFile($"appsettings.{EnvironmentName}.json", true)
+                .AddJsonFile("C:\\Azure\\appsettings.KeyVault.json", true, true)
+                .AddJsonFile("appsettings.Local.json", true, true)
+                .AddJsonFile("local.settings.json", true, true)
+                .AddEnvironmentVariables()
+                .Build();
 
-        public async Task Run()
-        {
-            bool isExit = false;
+            // Initialize a ServiceCollection
+            var services = new ServiceCollection();
 
-            List<ConsoleAppMenu> consoleAppMenus = DiscoverConsoleAppMenus();
+            // Add Configuration
+            services.AddSingleton<IConfiguration>(config);
+
+            // Add Logging
+            services
+                .AddLogging(builder =>
+                {
+                    builder.AddConfiguration(config.GetSection("Logging"));
+                    builder.AddConsole();
+                    builder.AddDebug();
+                });
+
+            // Add Processors
+            AddConsoleAppMenuTypes(services);
+
+            // Create the Startup
+            IConsoleAppStartup startup = (TStartup)Activator.CreateInstance(typeof(TStartup), new object[] { config });
+
+            if (startup == null)
+            {
+                throw new InvalidOperationException($"Could not create an instance of startup class of type '{typeof(TStartup).FullName}'");
+            }
+
+            // Configure services
+            startup.ConfigureServices(services);
+
+            // Build the IServiceProvider
+            IServiceProvider serviceProvider = services.BuildServiceProvider();
+
+            // Create the program
+            var application = new ConsoleAppProgramRunner(serviceProvider);
 
             try
             {
-                while (!isExit)
-                {
-                    DisplayHomeMenu(consoleAppMenus);
+                // Run the program
+                await application.RunAsync(cancellationToken);
 
-                    string selection = Console.ReadLine();
-
-                    if (selection?.ToUpper() == "X")
-                    {
-                        isExit = true;
-                    }
-                    else
-                    {
-                        ConsoleAppMenu consoleAppMenu =
-                            consoleAppMenus.SingleOrDefault(s => string.Equals(s.Key, selection, StringComparison.OrdinalIgnoreCase));
-
-                        if (consoleAppMenu == null)
-                        {
-                            Console.Clear();
-                            Console.WriteLine("Invalid selection! Please try again (press any key to continue)");
-                            Console.ReadKey();
-                            Console.Clear();
-                        }
-                        else
-                        {
-                            Console.Clear();
-
-                            var consoleAppMenuToRun = _serviceProvider.GetRequiredService(consoleAppMenu.MenuItemType);
-
-                            if (!consoleAppMenuToRun.GetType().GetInterfaces().Contains(typeof(IConsoleApp)) && !consoleAppMenuToRun.GetType().GetInterfaces().Contains(typeof(IConsoleAppAsync)))
-                            {
-                                Console.WriteLine("Error! That selection is not a ConsolaterApp (press any key to continue)");
-                                Console.ReadKey();
-                                Console.Clear();
-                            }
-                            else if (consoleAppMenuToRun.GetType().GetInterfaces().Contains(typeof(IConsoleAppAsync)))
-                            {
-                                await ((IConsoleAppAsync)consoleAppMenuToRun).RunAsync();
-                            }
-                            else
-                            {
-                                ((IConsoleApp)consoleAppMenuToRun).Run();
-                            }
-                        }
-                    }
-                }
+                Console.Clear();
+                Console.WriteLine("The program has ended");
+                Console.ReadLine();
             }
             catch (Exception e)
             {
                 Console.Clear();
-                Console.WriteLine($"Encountered unhandled exception{Environment.NewLine}{Environment.NewLine}'{e.Message}'");
+                Console.WriteLine("Encountered unhandled exception:");
+                Console.WriteLine(e.Message);
+                Console.ReadLine();
             }
         }
 
-        private List<ConsoleAppMenu> DiscoverConsoleAppMenus()
+        private static IServiceCollection AddConsoleAppMenuTypes(IServiceCollection services)
         {
-            List<Type> consoleAppMenuTypes = new AssemblyScanner()
-                .GetTypesWithAttribute<ConsoleAppMenuAttribute>()
-                .OrderBy(t => t.Name)
-                .ToList();
+            var types = new AssemblyScanner().GetTypesWithAttribute<ConsoleAppMenuAttribute>();
 
-            var consoleAppMenus = new List<ConsoleAppMenu>();
-
-            for (int i = 0; i < consoleAppMenuTypes.Count; i++)
+            foreach (Type type in types)
             {
-                Type t = consoleAppMenuTypes[i];
-
-                ConsoleAppMenuAttribute consoleAppMenuAttribute =
-                    (ConsoleAppMenuAttribute)t.GetCustomAttributes(typeof(ConsoleAppMenuAttribute), true).Single();
-
-                consoleAppMenus.Add(new ConsoleAppMenu(consoleAppMenuAttribute.Key ?? (i + 1).ToString(), consoleAppMenuAttribute.Name ?? t.Name, t));
+                services.AddTransient(type);
             }
 
-            return consoleAppMenus;
+            return services;
         }
 
-        private static void DisplayHomeMenu(List<ConsoleAppMenu> consoleAppMenus)
-        {
-            Console.WriteLine("Please make a selection:{0}", Environment.NewLine);
-
-            foreach (ConsoleAppMenu consoleAppMenu in consoleAppMenus)
-            {
-                Console.WriteLine(" ({0}) {1}", consoleAppMenu.Key, consoleAppMenu.Name);
-            }
-
-            Console.WriteLine("{0}Select {1} - {2} and press Enter (enter ( X ) or ( x ) and press Enter to exit)", Environment.NewLine, consoleAppMenus.Min(s => s.Key), consoleAppMenus.Max(s => s.Key));
-        }
+        private static string EnvironmentName => Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
     }
 }

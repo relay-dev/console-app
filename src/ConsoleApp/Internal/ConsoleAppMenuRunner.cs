@@ -2,13 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 
-namespace ConsoleApp
+namespace ConsoleApp.Internal
 {
-    public abstract class ConsoleAppAsync : IConsoleAppAsync
+    internal abstract class ConsoleAppMenuRunner : IConsoleAppMenuRunner
     {
-        public async Task RunAsync()
+        public void Run()
         {
             bool isExit = false;
 
@@ -39,7 +38,7 @@ namespace ConsoleApp
                     {
                         Console.Clear();
 
-                        await consoleAppMenuOption.Method.Invoke();
+                        consoleAppMenuOption.ValueFactory.Invoke();
 
                         Console.WriteLine("{0}Press any key to continue...", Environment.NewLine);
                     }
@@ -66,7 +65,7 @@ namespace ConsoleApp
                 ConsoleAppMenuOptionAttribute consoleAppMenuOptionAttribute =
                     (ConsoleAppMenuOptionAttribute)m.GetCustomAttributes(typeof(ConsoleAppMenuOptionAttribute), true).Single();
 
-                consoleAppMenuOptions.Add(new ConsoleAppMenuOption(consoleAppMenuOptionAttribute.Key ?? (i + 1).ToString(), consoleAppMenuOptionAttribute.Name ?? m.Name + "()", async () => await (Task)m.Invoke(this, null)));
+                consoleAppMenuOptions.Add(new ConsoleAppMenuOption(consoleAppMenuOptionAttribute.Key ?? (i + 1).ToString(), consoleAppMenuOptionAttribute.Name ?? m.Name + "()", async () => m.Invoke(this, null)));
             }
 
             return consoleAppMenuOptions.OrderBy(sm => sm.Key).ToList();
@@ -81,7 +80,7 @@ namespace ConsoleApp
                 Console.WriteLine(" ({0}) {1}", consoleAppMenuOption.Key, consoleAppMenuOption.Name);
             }
 
-            Console.WriteLine("{0}Select 1{1} and press Enter (enter ( H ) or ( h ) to return to the home menu)", Environment.NewLine, consoleAppMenuOptions.Count == 1 ? string.Empty : " - " + consoleAppMenuOptions.Max(sm => sm.Key));
+            Console.WriteLine("{0}Select {1}{2} and press Enter (enter ( H ) or ( h ) to return to the home menu)", Environment.NewLine, consoleAppMenuOptions.Min(s => s.Key), consoleAppMenuOptions.Count == 1 ? string.Empty : " - " + consoleAppMenuOptions.Max(sm => sm.Key));
         }
     }
 }
