@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-namespace ConsoleApp.Internal
+namespace ConsoleApp
 {
-    internal class ConsoleAppMenuOption
+    public class ConsoleAppMenuOption
     {
         public string Key { get; }
         public string Name { get; }
