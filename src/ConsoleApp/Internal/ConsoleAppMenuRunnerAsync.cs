@@ -19,9 +19,11 @@ namespace ConsoleApp.Internal
             {
                 DisplayOptionsMenu(consoleAppMenuOptions);
 
-                string selection = Console.ReadLine();
+                ConsoleKeyInfo consoleKeyInfo = Console.ReadKey();
 
-                if (selection?.ToUpper() == "H")
+                string selection = consoleKeyInfo.KeyChar.ToString();
+
+                if (selection.ToLower() == "h")
                 {
                     Console.Clear();
                     isExit = true;
@@ -82,7 +84,7 @@ namespace ConsoleApp.Internal
                 Console.WriteLine(" ({0}) {1}", consoleAppMenuOption.Key, consoleAppMenuOption.Name);
             }
 
-            Console.WriteLine("{0}Select 1{1} and press Enter (enter ( H ) or ( h ) to return to the home menu)", Environment.NewLine, consoleAppMenuOptions.Count == 1 ? string.Empty : " - " + consoleAppMenuOptions.Max(sm => sm.Key));
+            Console.WriteLine("{0}Enter {1}{2} (enter ( h ) to return to the home menu)", Environment.NewLine, consoleAppMenuOptions.Min(s => s.Key), consoleAppMenuOptions.Count == 1 ? string.Empty : " - " + consoleAppMenuOptions.Max(sm => sm.Key));
         }
     }
 }

@@ -22,58 +22,78 @@ namespace ConsoleApp.Internal
 
             List<ConsoleAppMenu> consoleAppMenus = DiscoverConsoleAppMenus();
 
-            try
+            while (!isExit)
             {
-                while (!isExit)
+                DisplayHomeMenu(consoleAppMenus);
+
+                ConsoleKeyInfo consoleKeyInfo = Console.ReadKey();
+
+                string selection = consoleKeyInfo.KeyChar.ToString();
+
+                if (selection.ToLower() == "x")
                 {
-                    DisplayHomeMenu(consoleAppMenus);
+                    isExit = true;
+                }
+                else
+                {
+                    ConsoleAppMenu consoleAppMenu =
+                        consoleAppMenus.SingleOrDefault(s => string.Equals(s.Key, selection, StringComparison.OrdinalIgnoreCase));
 
-                    string selection = Console.ReadLine();
-
-                    if (selection?.ToUpper() == "X")
+                    if (consoleAppMenu == null)
                     {
-                        isExit = true;
+                        Console.Clear();
+                        Console.WriteLine("Invalid selection! Please try again (press any key to continue)");
+                        Console.ReadKey();
+                        Console.Clear();
                     }
                     else
                     {
-                        ConsoleAppMenu consoleAppMenu =
-                            consoleAppMenus.SingleOrDefault(s => string.Equals(s.Key, selection, StringComparison.OrdinalIgnoreCase));
+                        Console.Clear();
 
-                        if (consoleAppMenu == null)
+                        var consoleAppMenuToRun = _serviceProvider.GetRequiredService(consoleAppMenu.Type);
+
+                        if (!consoleAppMenuToRun.GetType().GetInterfaces().Contains(typeof(IConsoleAppMenuRunner)) && !consoleAppMenuToRun.GetType().GetInterfaces().Contains(typeof(IConsoleAppMenuRunnerAsync)))
                         {
-                            Console.Clear();
-                            Console.WriteLine("Invalid selection! Please try again (press any key to continue)");
+                            Console.WriteLine("Error! That selection is not a ConsolaterApp (press any key to continue)");
                             Console.ReadKey();
                             Console.Clear();
                         }
-                        else
+                        else if (consoleAppMenuToRun.GetType().GetInterfaces().Contains(typeof(IConsoleAppMenuRunnerAsync)))
                         {
-                            Console.Clear();
-
-                            var consoleAppMenuToRun = _serviceProvider.GetRequiredService(consoleAppMenu.Type);
-
-                            if (!consoleAppMenuToRun.GetType().GetInterfaces().Contains(typeof(IConsoleAppMenuRunner)) && !consoleAppMenuToRun.GetType().GetInterfaces().Contains(typeof(IConsoleAppMenuRunnerAsync)))
-                            {
-                                Console.WriteLine("Error! That selection is not a ConsolaterApp (press any key to continue)");
-                                Console.ReadKey();
-                                Console.Clear();
-                            }
-                            else if (consoleAppMenuToRun.GetType().GetInterfaces().Contains(typeof(IConsoleAppMenuRunnerAsync)))
+                            Execute(async () =>
                             {
                                 await ((IConsoleAppMenuRunnerAsync)consoleAppMenuToRun).RunAsync(cancellationToken);
-                            }
-                            else
+                            });
+                        }
+                        else
+                        {
+                            Execute(() =>
                             {
                                 ((IConsoleAppMenuRunner)consoleAppMenuToRun).Run();
-                            }
+                            });
                         }
                     }
                 }
             }
+        }
+
+        private static void Execute(Action action)
+        {
+            try
+            {
+                action.Invoke();
+
+                Console.WriteLine();
+                Console.WriteLine("***Complete***");
+                Console.WriteLine("Press any key to continue");
+                Console.ReadKey();
+            }
             catch (Exception e)
             {
                 Console.Clear();
-                Console.WriteLine($"Encountered unhandled exception{Environment.NewLine}{Environment.NewLine}'{e.Message}'");
+                Console.WriteLine($"ERROR: {e.Message}");
+                Console.WriteLine("Press any key to continue");
+                Console.ReadKey();
             }
         }
 
@@ -108,7 +128,7 @@ namespace ConsoleApp.Internal
                 Console.WriteLine(" ({0}) {1}", consoleAppMenu.Key, consoleAppMenu.Name);
             }
 
-            Console.WriteLine("{0}Select {1} - {2} and press Enter (enter ( X ) or ( x ) and press Enter to exit)", Environment.NewLine, consoleAppMenus.Min(s => s.Key), consoleAppMenus.Max(s => s.Key));
+            Console.WriteLine("{0}Enter {1} - {2} (enter ( x ) to exit)", Environment.NewLine, consoleAppMenus.Min(s => s.Key), consoleAppMenus.Max(s => s.Key));
         }
     }
 }
