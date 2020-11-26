@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <PackageId>Relay.ConsoleApp</PackageId>
+    <Version>1.0.1</Version>
+    <Authors>Sott Ferguson</Authors>
+    <Company>Relay Technologies</Company>
+    <Product>Consolater</Product>
+    <Description>A small framework that translates classes and methods to menu items and menu options in a console app</Description>
+    <Copyright>Copyright ©2020</Copyright>
+    <PackageProjectUrl>https://github.com/scottjferguson/consolater</PackageProjectUrl>
+    <PackageIconUrl>https://imgur.com/KLdrWTh.png</PackageIconUrl>
+    <RepositoryUrl>https://github.com/scottjferguson/consolater.git</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReleaseNotes>Initial release</PackageReleaseNotes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.1.4" />
+  </ItemGroup>
+
+</Project>
